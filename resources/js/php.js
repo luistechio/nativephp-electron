@@ -70,28 +70,33 @@ if (platform.phpBinary) {
             if (err) throw err;
             zipfile.readEntry();
             zipfile.on("entry", function (entry) {
-                zipfile.openReadStream(entry, function (err, readStream) {
-                    if (err) throw err;
+                const entryPath = join(binaryDestDir, entry.fileName);
 
-                    const binaryPath = join(binaryDestDir, platform.phpBinary);
-                    const writeStream = fs.createWriteStream(binaryPath);
+                // Se for diretório, cria e lê o próximo
+                if (/\/$/.test(entry.fileName)) {
+                    ensureDirSync(entryPath);
+                    zipfile.readEntry();
+                } else {
+                    zipfile.openReadStream(entry, function (err, readStream) {
+                        if (err) throw err;
 
-                    readStream.pipe(writeStream);
+                        ensureDirSync(join(entryPath, '..'));
+                        const writeStream = fs.createWriteStream(entryPath);
 
-                    writeStream.on("close", function() {
-                        console.log('Copied PHP binary to ', binaryPath);
+                        readStream.pipe(writeStream);
 
-                        // Add execute permissions
-                        fs.chmod(binaryPath, 0o755, (err) => {
-                            if (err) {
-                                console.log(`Error setting permissions: ${err}`);
-                            }
+                        writeStream.on("close", function () {
+                            fs.chmod(entryPath, 0o755, (err) => {
+                                if (err) {
+                                    console.log(Erro ao definir permissão para ${entryPath}: ${err});
+                                }
+                            });
+
+                            zipfile.readEntry();
                         });
-
-                        zipfile.readEntry();
                     });
-                });
-            });
+                }
+            });
         });
     } catch (e) {
         console.error('Error copying PHP binary', e);
