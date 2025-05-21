@@ -88,7 +88,7 @@ if (platform.phpBinary) {
                         writeStream.on("close", function () {
                             fs.chmod(entryPath, 0o755, (err) => {
                                 if (err) {
-                                    console.log(Erro ao definir permissão para ${entryPath}: ${err});
+                                    console.log("Erro ao definir permissão para ${entryPath}: ${err}");
                                 }
                             });
 
